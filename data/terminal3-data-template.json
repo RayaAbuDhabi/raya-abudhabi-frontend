@@ -1,0 +1,221 @@
+{
+  "terminal": {
+    "name": "Abu Dhabi International Airport - Terminal 3",
+    "code": "AUH-T3",
+    "dimensions": {
+      "length_meters": 0,
+      "width_meters": 0,
+      "area_sqm": 0
+    }
+  },
+  "gates": [
+    {
+      "id": "gate_a1",
+      "name": "A1",
+      "x": 0,
+      "y": 0,
+      "concourse": "A",
+      "type": "contact|remote|bus",
+      "airlines": [],
+      "notes": ""
+    },
+    {
+      "id": "gate_a15",
+      "name": "A15",
+      "x": 0,
+      "y": 0,
+      "concourse": "A",
+      "type": "contact",
+      "airlines": [],
+      "notes": "Prayer room nearby"
+    },
+    {
+      "id": "gate_b20",
+      "name": "B20",
+      "x": 0,
+      "y": 0,
+      "concourse": "B",
+      "type": "contact",
+      "airlines": [],
+      "notes": "Prayer room nearby"
+    },
+    {
+      "id": "gate_c15",
+      "name": "C15",
+      "x": 0,
+      "y": 0,
+      "concourse": "C",
+      "type": "contact",
+      "airlines": [],
+      "notes": "Prayer room nearby"
+    }
+  ],
+  "facilities": {
+    "dining": [
+      {
+        "id": "mcdonalds_1",
+        "name": "McDonald's",
+        "x": 0,
+        "y": 0,
+        "area": "Concourse A|B|C",
+        "type": "fast_food",
+        "cuisine": "American",
+        "hours": "24/7",
+        "halal": true
+      },
+      {
+        "id": "shake_shack_1",
+        "name": "Shake Shack",
+        "x": 0,
+        "y": 0,
+        "area": "Concourse A|B|C",
+        "type": "fast_food",
+        "cuisine": "American",
+        "hours": "24/7",
+        "halal": true
+      },
+      {
+        "id": "paul_bakery_1",
+        "name": "Paul Bakery",
+        "x": 0,
+        "y": 0,
+        "area": "Concourse A|B|C",
+        "type": "bakery",
+        "cuisine": "French",
+        "hours": "06:00-22:00",
+        "halal": true
+      },
+      {
+        "id": "wagamama_1",
+        "name": "Wagamama",
+        "x": 0,
+        "y": 0,
+        "area": "Concourse A|B|C",
+        "type": "restaurant",
+        "cuisine": "Asian",
+        "hours": "06:00-23:00",
+        "halal": true
+      }
+    ],
+    "retail": [
+      {
+        "id": "duty_free_main",
+        "name": "Abu Dhabi Duty Free",
+        "x": 0,
+        "y": 0,
+        "area": "After security",
+        "type": "duty_free",
+        "hours": "24/7",
+        "categories": ["luxury", "perfumes", "electronics", "souvenirs"]
+      }
+    ],
+    "prayer_rooms": [
+      {
+        "id": "prayer_a15",
+        "name": "Prayer Room",
+        "x": 0,
+        "y": 0,
+        "area": "Near Gate A15",
+        "level": 2,
+        "facilities": ["ablution", "prayer_mats", "qibla_direction"]
+      },
+      {
+        "id": "prayer_b20",
+        "name": "Prayer Room",
+        "x": 0,
+        "y": 0,
+        "area": "Near Gate B20",
+        "level": 2,
+        "facilities": ["ablution", "prayer_mats", "qibla_direction"]
+      },
+      {
+        "id": "prayer_c15",
+        "name": "Prayer Room",
+        "x": 0,
+        "y": 0,
+        "area": "Near Gate C15",
+        "level": 2,
+        "facilities": ["ablution", "prayer_mats", "qibla_direction"]
+      }
+    ],
+    "restrooms": [
+      {
+        "id": "restroom_a_east",
+        "name": "Restrooms - Concourse A East",
+        "x": 0,
+        "y": 0,
+        "area": "Concourse A East",
+        "facilities": ["accessible", "baby_changing", "family_room"]
+      },
+      {
+        "id": "restroom_a_west",
+        "name": "Restrooms - Concourse A West",
+        "x": 0,
+        "y": 0,
+        "area": "Concourse A West",
+        "facilities": ["accessible", "baby_changing", "family_room"]
+      },
+      {
+        "id": "restroom_b_north",
+        "name": "Restrooms - Concourse B North",
+        "x": 0,
+        "y": 0,
+        "area": "Concourse B North",
+        "facilities": ["accessible", "baby_changing", "family_room"]
+      }
+    ],
+    "services": [
+      {
+        "id": "info_desk_1",
+        "name": "Information Desk",
+        "x": 0,
+        "y": 0,
+        "area": "Main Hall",
+        "hours": "24/7"
+      }
+    ]
+  },
+  "infrastructure": {
+    "check_in": [
+      {
+        "id": "checkin_zone_a",
+        "name": "Check-in Zone A",
+        "x": 0,
+        "y": 0,
+        "counters": "1-200",
+        "airlines": []
+      }
+    ],
+    "security": [
+      {
+        "id": "security_main",
+        "name": "Main Security Checkpoint",
+        "x": 0,
+        "y": 0,
+        "lanes": 0
+      }
+    ],
+    "baggage_claim": [
+      {
+        "id": "baggage_1",
+        "name": "Baggage Claim 1",
+        "x": 0,
+        "y": 0,
+        "carousels": []
+      }
+    ]
+  },
+  "accessibility": {
+    "elevators": [],
+    "escalators": [],
+    "ramps": [],
+    "accessible_restrooms": [],
+    "wheelchair_assistance": []
+  },
+  "notes": [
+    "Fill in x,y coordinates when available",
+    "Use same coordinate system throughout",
+    "Add more gates as discovered",
+    "Update with actual positions from floor plans"
+  ]
+}

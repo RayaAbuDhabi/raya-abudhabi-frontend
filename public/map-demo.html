@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Raya Terminal Map - Enhanced Version</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      overflow: hidden;
+    }
+    .map-container {
+      cursor: grab;
+      user-select: none;
+    }
+    .map-container:active {
+      cursor: grabbing;
+    }
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 40%;
+        z-index: 1000;
+        transform: translateY(calc(100% - 60px));
+        transition: transform 0.3s ease;
+      }
+      .sidebar.open {
+        transform: translateY(0);
+      }
+      .sidebar-handle {
+        display: block;
+        width: 60px;
+        height: 6px;
+        background: #cbd5e0;
+        border-radius: 3px;
+        margin: 8px auto;
+        cursor: pointer;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // Icons
+    const Navigation = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+      </svg>
+    );
+
+    const MapPin = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    );
+
+    const Clock = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    );
+
+    const Footprints = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    );
+
+    const Accessibility = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+      </svg>
+    );
+
+    const ZoomIn = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+      </svg>
+    );
+
+    const ZoomOut = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+      </svg>
+    );
+
+    const Menu = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    );
+
+    // FIXED: Better spaced terminal layout - larger canvas, no overlaps
+    const terminal3POIs = {
+      gates: [
+        // Concourse A - Top right (well spaced)
+        { id: 'gate_a1', name: 'A1', x: 1000, y: 200, concourse: 'A', color: '#27ae60', congestion: 'low', waitTime: 5 },
+        { id: 'gate_a2', name: 'A2', x: 1100, y: 200, concourse: 'A', color: '#27ae60', congestion: 'medium', waitTime: 12 },
+        { id: 'gate_a3', name: 'A3', x: 1200, y: 200, concourse: 'A', color: '#27ae60', congestion: 'low', waitTime: 3 },
+        { id: 'gate_a4', name: 'A4', x: 1300, y: 200, concourse: 'A', color: '#27ae60', congestion: 'high', waitTime: 18 },
+        { id: 'gate_a5', name: 'A5', x: 1400, y: 200, concourse: 'A', color: '#27ae60', congestion: 'medium', waitTime: 10 },
+        { id: 'gate_a6', name: 'A6', x: 1000, y: 300, concourse: 'A', color: '#27ae60', congestion: 'low', waitTime: 4 },
+        { id: 'gate_a7', name: 'A7', x: 1100, y: 300, concourse: 'A', color: '#27ae60', congestion: 'low', waitTime: 6 },
+        
+        // Concourse B - Bottom left (well spaced)
+        { id: 'gate_b1', name: 'B1', x: 150, y: 550, concourse: 'B', color: '#f39c12', congestion: 'medium', waitTime: 15 },
+        { id: 'gate_b2', name: 'B2', x: 250, y: 550, concourse: 'B', color: '#f39c12', congestion: 'low', waitTime: 7 },
+        { id: 'gate_b3', name: 'B3', x: 350, y: 550, concourse: 'B', color: '#f39c12', congestion: 'high', waitTime: 22 },
+        { id: 'gate_b4', name: 'B4', x: 450, y: 550, concourse: 'B', color: '#f39c12', congestion: 'medium', waitTime: 11 },
+        { id: 'gate_b5', name: 'B5', x: 150, y: 650, concourse: 'B', color: '#f39c12', congestion: 'low', waitTime: 5 },
+        
+        // Concourse C - Bottom right (well spaced)
+        { id: 'gate_c1', name: 'C1', x: 1000, y: 550, concourse: 'C', color: '#2196f3', congestion: 'low', waitTime: 8 },
+        { id: 'gate_c2', name: 'C2', x: 1100, y: 550, concourse: 'C', color: '#2196f3', congestion: 'medium', waitTime: 14 },
+        { id: 'gate_c3', name: 'C3', x: 1200, y: 550, concourse: 'C', color: '#2196f3', congestion: 'low', waitTime: 6 },
+        { id: 'gate_c4', name: 'C4', x: 1000, y: 650, concourse: 'C', color: '#2196f3', congestion: 'high', waitTime: 20 },
+      ],
+      facilities: [
+        // Facilities positioned away from gates
+        { id: 'coffee_a', name: 'Costa Coffee', x: 1250, y: 380, type: 'dining', icon: '☕', congestion: 'medium' },
+        { id: 'duty_free', name: 'Duty Free', x: 1400, y: 380, type: 'retail', icon: '🛍️', congestion: 'high' },
+        { id: 'lounge', name: 'Etihad Lounge', x: 1450, y: 280, type: 'lounge', icon: '✈️', congestion: 'low' },
+        { id: 'restaurant_b', name: 'Restaurant', x: 250, y: 720, type: 'dining', icon: '🍔', congestion: 'medium' },
+        { id: 'prayer_c', name: 'Prayer Room', x: 1100, y: 720, type: 'facility', icon: '🕌', congestion: 'low' },
+        { id: 'pharmacy', name: 'Pharmacy', x: 550, y: 500, type: 'facility', icon: '💊', congestion: 'low' },
+        { id: 'currency', name: 'Currency Exchange', x: 750, y: 270, type: 'service', icon: '💱', congestion: 'medium' },
+        { id: 'info', name: 'Information', x: 800, y: 200, type: 'service', icon: 'ℹ️', congestion: 'medium' },
+      ],
+      accessibility: [
+        { id: 'elevator_1', name: 'Elevator', x: 900, y: 380, type: 'elevator', icon: '🛗' },
+        { id: 'elevator_2', name: 'Elevator', x: 650, y: 550, type: 'elevator', icon: '🛗' },
+        { id: 'ramp_1', name: 'Accessible Ramp', x: 550, y: 380, type: 'ramp', icon: '♿' },
+        { id: 'ramp_2', name: 'Accessible Ramp', x: 1300, y: 450, type: 'ramp', icon: '♿' },
+        { id: 'restroom_accessible', name: 'Accessible Restroom', x: 800, y: 500, type: 'restroom', icon: '🚻' },
+      ],
+      checkInBaggage: [
+        // Check-in at top, well separated from main entrance
+        { id: 'checkin_a', name: 'Check-in A', x: 450, y: 100, width: 140, height: 50, counters: 15, congestion: 'high' },
+        { id: 'checkin_b', name: 'Check-in B', x: 620, y: 100, width: 140, height: 50, counters: 12, congestion: 'medium' },
+        
+        // Baggage at bottom
+        { id: 'baggage_1', name: 'Baggage Claim 1', x: 150, y: 800, width: 200, height: 50, congestion: 'low' },
+        { id: 'baggage_2', name: 'Baggage Claim 2', x: 380, y: 800, width: 200, height: 50, congestion: 'medium' },
+      ]
+    };
+
+    const TerminalMap = () => {
+      const [selectedStart, setSelectedStart] = useState('gate_a1');
+      const [selectedEnd, setSelectedEnd] = useState('gate_c2');
+      const [showRoute, setShowRoute] = useState(true);
+      const [animationProgress, setAnimationProgress] = useState(0);
+      const [zoom, setZoom] = useState(1);
+      const [pan, setPan] = useState({ x: 0, y: 0 });
+      const [isDragging, setIsDragging] = useState(false);
+      const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+      const [showAccessibility, setShowAccessibility] = useState(true);
+      const [showCongestion, setShowCongestion] = useState(true);
+      const [sidebarOpen, setSidebarOpen] = useState(false);
+      const [isMobile, setIsMobile] = useState(false);
+      const mapRef = useRef(null);
+
+      useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+      }, []);
+
+      useEffect(() => {
+        if (showRoute) {
+          const interval = setInterval(() => {
+            setAnimationProgress(prev => (prev + 1) % 100);
+          }, 50);
+          return () => clearInterval(interval);
+        }
+      }, [showRoute]);
+
+      const startGate = terminal3POIs.gates.find(g => g.id === selectedStart);
+      const endGate = terminal3POIs.gates.find(g => g.id === selectedEnd);
+
+      const calculateDistance = () => {
+        if (!startGate || !endGate) return 0;
+        const dx = endGate.x - startGate.x;
+        const dy = endGate.y - startGate.y;
+        return Math.round(Math.sqrt(dx * dx + dy * dy));
+      };
+
+      const distance = calculateDistance();
+      const walkingTime = Math.ceil(distance / 1.4);
+
+      const handleWheel = (e) => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        setZoom(prev => Math.max(0.5, Math.min(3, prev + delta)));
+      };
+
+      const handleMouseDown = (e) => {
+        if (e.button === 0) {
+          setIsDragging(true);
+          setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+        }
+      };
+
+      const handleMouseMove = (e) => {
+        if (isDragging) {
+          setPan({
+            x: e.clientX - dragStart.x,
+            y: e.clientY - dragStart.y
+          });
+        }
+      };
+
+      const handleMouseUp = () => {
+        setIsDragging(false);
+      };
+
+      const handleTouchStart = (e) => {
+        if (e.touches.length === 1) {
+          setIsDragging(true);
+          setDragStart({ 
+            x: e.touches[0].clientX - pan.x, 
+            y: e.touches[0].clientY - pan.y 
+          });
+        }
+      };
+
+      const handleTouchMove = (e) => {
+        if (isDragging && e.touches.length === 1) {
+          setPan({
+            x: e.touches[0].clientX - dragStart.x,
+            y: e.touches[0].clientY - dragStart.y
+          });
+        }
+      };
+
+      const handleGateClick = (gateId) => {
+        if (!selectedStart || selectedStart === gateId) {
+          setSelectedStart(gateId);
+          setSelectedEnd(null);
+        } else if (!selectedEnd) {
+          setSelectedEnd(gateId);
+          setShowRoute(true);
+        } else {
+          setSelectedStart(gateId);
+          setSelectedEnd(null);
+        }
+      };
+
+      const resetView = () => {
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+      };
+
+      const getCongestionColor = (congestion) => {
+        switch(congestion) {
+          case 'low': return '#10b981';
+          case 'medium': return '#f59e0b';
+          case 'high': return '#ef4444';
+          default: return '#6b7280';
+        }
+      };
+
+      const getCongestionText = (congestion) => {
+        switch(congestion) {
+          case 'low': return 'Low';
+          case 'medium': return 'Medium';
+          case 'high': return 'High';
+          default: return 'Unknown';
+        }
+      };
+
+      return (
+        <div className="w-full h-screen bg-gray-50 flex flex-col md:flex-row overflow-hidden">
+          {isMobile && (
+            <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-3 flex items-center justify-between">
+              <h1 className="text-lg font-bold flex items-center gap-2">
+                <Navigation className="w-5 h-5" />
+                Terminal 3
+              </h1>
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 hover:bg-blue-700 rounded"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+
+          {/* Sidebar */}
+          <div className={`${isMobile ? 'sidebar' : 'w-80'} ${isMobile && sidebarOpen ? 'open' : ''} bg-white shadow-lg overflow-y-auto`}>
+            {isMobile && (
+              <div 
+                className="sidebar-handle"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              />
+            )}
+            
+            {!isMobile && (
+              <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4">
+                <h1 className="text-xl font-bold flex items-center gap-2">
+                  <Navigation className="w-6 h-6" />
+                  Terminal 3 Navigation
+                </h1>
+                <p className="text-xs text-blue-100 mt-1">Real-time indoor navigation</p>
+              </div>
+            )}
+
+            <div className="p-4 space-y-4">
+              {/* Route Selection */}
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-blue-600" />
+                  Plan Your Route
+                </h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 block mb-1">From</label>
+                    <select 
+                      value={selectedStart || ''}
+                      onChange={(e) => setSelectedStart(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select gate...</option>
+                      {terminal3POIs.gates.map(gate => (
+                        <option key={gate.id} value={gate.id}>
+                          Gate {gate.name} (Concourse {gate.concourse})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 block mb-1">To</label>
+                    <select 
+                      value={selectedEnd || ''}
+                      onChange={(e) => setSelectedEnd(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select gate...</option>
+                      {terminal3POIs.gates.map(gate => (
+                        <option key={gate.id} value={gate.id}>
+                          Gate {gate.name} (Concourse {gate.concourse})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowRoute(!showRoute)}
+                      className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${
+                        showRoute 
+                          ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {showRoute ? 'Hide Route' : 'Show Route'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedStart(null);
+                        setSelectedEnd(null);
+                        setShowRoute(false);
+                      }}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300"
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-gray-500 italic">
+                    💡 Tip: Click gates on the map to select them
+                  </p>
+                </div>
+              </div>
+
+              {/* Route Info */}
+              {showRoute && startGate && endGate && (
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <h3 className="font-semibold text-gray-800 mb-3">Route Details</h3>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <Footprints className="w-5 h-5 text-green-600" />
+                      <div>
+                        <div className="text-xs text-gray-600">Distance</div>
+                        <div className="font-semibold text-gray-800">{distance}m</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-green-600" />
+                      <div>
+                        <div className="text-xs text-gray-600">Walking Time</div>
+                        <div className="font-semibold text-gray-800">~{Math.ceil(walkingTime / 60)} minutes</div>
+                      </div>
+                    </div>
+
+                    {showCongestion && (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full" style={{ backgroundColor: getCongestionColor(startGate.congestion) }} />
+                          <div>
+                            <div className="text-xs text-gray-600">Start Gate Wait</div>
+                            <div className="font-semibold text-gray-800">{startGate.waitTime} min ({getCongestionText(startGate.congestion)})</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full" style={{ backgroundColor: getCongestionColor(endGate.congestion) }} />
+                          <div>
+                            <div className="text-xs text-gray-600">End Gate Wait</div>
+                            <div className="font-semibold text-gray-800">{endGate.waitTime} min ({getCongestionText(endGate.congestion)})</div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-green-200">
+                    <div className="text-xs font-medium text-gray-600 mb-2">Turn-by-turn:</div>
+                    <ol className="text-sm space-y-1 text-gray-700">
+                      <li>1. Start at Gate {startGate?.name}</li>
+                      <li>2. Walk {startGate && endGate && startGate.x < endGate.x ? 'east' : 'west'} along terminal</li>
+                      {showAccessibility && <li>3. Accessible route available</li>}
+                      <li>{showAccessibility ? '4' : '3'}. Arrive at Gate {endGate?.name}</li>
+                    </ol>
+                  </div>
+                </div>
+              )}
+
+              {/* View Controls */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-800 mb-3">Map Controls</h3>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Show Accessibility</span>
+                    <button
+                      onClick={() => setShowAccessibility(!showAccessibility)}
+                      className={`px-3 py-1 rounded text-xs font-medium ${
+                        showAccessibility 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      {showAccessibility ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Show Congestion</span>
+                    <button
+                      onClick={() => setShowCongestion(!showCongestion)}
+                      className={`px-3 py-1 rounded text-xs font-medium ${
+                        showCongestion 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      {showCongestion ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+
+                  <div className="pt-2 border-t">
+                    <div className="text-sm text-gray-700 mb-2">Zoom: {Math.round(zoom * 100)}%</div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setZoom(prev => Math.min(3, prev + 0.2))}
+                        className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-1"
+                      >
+                        <ZoomIn className="w-4 h-4" />
+                        In
+                      </button>
+                      <button
+                        onClick={() => setZoom(prev => Math.max(0.5, prev - 0.2))}
+                        className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-1"
+                      >
+                        <ZoomOut className="w-4 h-4" />
+                        Out
+                      </button>
+                    </div>
+                    <button
+                      onClick={resetView}
+                      className="w-full mt-2 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
+                    >
+                      Reset View
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Nearby Facilities */}
+              <div className="bg-purple-50 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-800 mb-3">Facilities</h3>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {terminal3POIs.facilities.slice(0, 5).map(facility => (
+                    <div key={facility.id} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{facility.icon}</span>
+                        <span className="text-gray-700">{facility.name}</span>
+                      </div>
+                      {showCongestion && (
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getCongestionColor(facility.congestion) }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-800 mb-3">Legend</h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-green-500 rounded"></div>
+                    <span>Concourse A</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-orange-500 rounded"></div>
+                    <span>Concourse B</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                    <span>Concourse C</span>
+                  </div>
+                  {showCongestion && (
+                    <>
+                      <div className="border-t pt-2 mt-2">
+                        <div className="font-medium mb-1">Congestion:</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span>Low</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                        <span>Medium</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span>High</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Map Area */}
+          <div 
+            ref={mapRef}
+            className="flex-1 relative overflow-hidden bg-gray-100 map-container"
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleMouseUp}
+          >
+            <svg 
+              viewBox="0 0 1600 900" 
+              className="w-full h-full"
+              style={{
+                transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+                transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+              }}
+            >
+              {/* Terminal Building - Larger canvas */}
+              <rect x="80" y="80" width="1440" height="760" fill="#ffffff" stroke="#2c3e50" strokeWidth="3" rx="10"/>
+              
+              {/* Main Entrance - Moved to avoid overlap */}
+              <rect x="800" y="80" width="200" height="60" fill="#3498db" stroke="#2980b9" strokeWidth="2" rx="5"/>
+              <text x="900" y="115" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">Main Entrance</text>
+              
+              {/* Check-in Areas - Positioned clearly below entrance */}
+              {terminal3POIs.checkInBaggage.filter(a => a.id.includes('checkin')).map(area => (
+                <g key={area.id}>
+                  <rect
+                    x={area.x}
+                    y={area.y}
+                    width={area.width}
+                    height={area.height}
+                    fill="#3498db"
+                    stroke="#2980b9"
+                    strokeWidth="2"
+                    rx="5"
+                  />
+                  <text x={area.x + area.width / 2} y={area.y + area.height / 2 + 5} textAnchor="middle" fontSize="11" fontWeight="bold" fill="white">
+                    {area.name}
+                  </text>
+                  {showCongestion && (
+                    <circle
+                      cx={area.x + area.width - 12}
+                      cy={area.y + 12}
+                      r="7"
+                      fill={getCongestionColor(area.congestion)}
+                      stroke="white"
+                      strokeWidth="2"
+                    />
+                  )}
+                </g>
+              ))}
+              
+              {/* Security - Clear position */}
+              <rect x="800" y="180" width="200" height="50" fill="#e74c3c" stroke="#c0392b" strokeWidth="2" rx="5"/>
+              <text x="900" y="210" textAnchor="middle" fontSize="12" fontWeight="bold" fill="white">Security</text>
+              
+              {/* Central Hub */}
+              <circle cx="800" cy="420" r="70" fill="#9b59b6" stroke="#8e44ad" strokeWidth="3"/>
+              <text x="800" y="415" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">Central</text>
+              <text x="800" y="435" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">Hub</text>
+              
+              {/* Concourse Areas - Well spaced */}
+              <rect x="980" y="170" width="520" height="200" fill="#e8f5e9" stroke="#27ae60" strokeWidth="2" rx="5" opacity="0.3"/>
+              <text x="1240" y="155" textAnchor="middle" fontSize="18" fontWeight="bold" fill="#27ae60">Concourse A</text>
+              
+              <rect x="120" y="520" width="520" height="200" fill="#fff3e0" stroke="#f39c12" strokeWidth="2" rx="5" opacity="0.3"/>
+              <text x="380" y="505" textAnchor="middle" fontSize="18" fontWeight="bold" fill="#f39c12">Concourse B</text>
+              
+              <rect x="980" y="520" width="520" height="200" fill="#e3f2fd" stroke="#2196f3" strokeWidth="2" rx="5" opacity="0.3"/>
+              <text x="1240" y="505" textAnchor="middle" fontSize="18" fontWeight="bold" fill="#2196f3">Concourse C</text>
+              
+              {/* Gates - NO OVERLAPS */}
+              {terminal3POIs.gates.map(gate => {
+                const isStart = gate.id === selectedStart;
+                const isEnd = gate.id === selectedEnd;
+                
+                return (
+                  <g 
+                    key={gate.id} 
+                    onClick={() => handleGateClick(gate.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <rect 
+                      x={gate.x} 
+                      y={gate.y} 
+                      width="70" 
+                      height="60" 
+                      fill={isStart ? '#e74c3c' : isEnd ? '#27ae60' : gate.color}
+                      stroke={isStart || isEnd ? 'white' : '#333'}
+                      strokeWidth={isStart || isEnd ? 3 : 2}
+                      rx="4"
+                      opacity={0.9}
+                    />
+                    <text 
+                      x={gate.x + 35} 
+                      y={gate.y + 35} 
+                      textAnchor="middle" 
+                      fontSize="14" 
+                      fontWeight="bold" 
+                      fill="white"
+                    >
+                      {gate.name}
+                    </text>
+                    {showCongestion && (
+                      <circle
+                        cx={gate.x + 60}
+                        cy={gate.y + 10}
+                        r="6"
+                        fill={getCongestionColor(gate.congestion)}
+                        stroke="white"
+                        strokeWidth="1.5"
+                      />
+                    )}
+                    {isStart && (
+                      <circle cx={gate.x + 35} cy={gate.y + 30} r="10" fill="white" opacity="0.8">
+                        <animate attributeName="r" values="10;14;10" dur="1s" repeatCount="indefinite"/>
+                      </circle>
+                    )}
+                    {isEnd && (
+                      <circle cx={gate.x + 35} cy={gate.y + 30} r="10" fill="white" opacity="0.8">
+                        <animate attributeName="r" values="10;14;10" dur="1s" repeatCount="indefinite"/>
+                      </circle>
+                    )}
+                  </g>
+                );
+              })}
+              
+              {/* Facilities - Positioned away from gates */}
+              {terminal3POIs.facilities.map(facility => (
+                <g key={facility.id}>
+                  <circle 
+                    cx={facility.x} 
+                    cy={facility.y} 
+                    r="22" 
+                    fill="#9c27b0" 
+                    stroke="#7b1fa2" 
+                    strokeWidth="2" 
+                    style={{ cursor: 'pointer' }}
+                  />
+                  <text x={facility.x} y={facility.y + 6} textAnchor="middle" fontSize="16">{facility.icon}</text>
+                  {showCongestion && (
+                    <circle
+                      cx={facility.x + 16}
+                      cy={facility.y - 16}
+                      r="6"
+                      fill={getCongestionColor(facility.congestion)}
+                      stroke="white"
+                      strokeWidth="1.5"
+                    />
+                  )}
+                </g>
+              ))}
+
+              {/* Accessibility Features */}
+              {showAccessibility && terminal3POIs.accessibility.map(item => (
+                <g key={item.id}>
+                  <circle 
+                    cx={item.x} 
+                    cy={item.y} 
+                    r="20" 
+                    fill="#06b6d4" 
+                    stroke="#0891b2" 
+                    strokeWidth="2" 
+                    opacity="0.9"
+                  />
+                  <text x={item.x} y={item.y + 6} textAnchor="middle" fontSize="16">{item.icon}</text>
+                </g>
+              ))}
+
+              {/* Baggage Claims - At bottom */}
+              {terminal3POIs.checkInBaggage.filter(a => a.id.includes('baggage')).map(area => (
+                <g key={area.id}>
+                  <rect
+                    x={area.x}
+                    y={area.y}
+                    width={area.width}
+                    height={area.height}
+                    fill="#9b59b6"
+                    stroke="#8e44ad"
+                    strokeWidth="2"
+                    rx="5"
+                  />
+                  <text x={area.x + area.width / 2} y={area.y + area.height / 2 + 5} textAnchor="middle" fontSize="12" fontWeight="bold" fill="white">
+                    {area.name}
+                  </text>
+                  {showCongestion && (
+                    <circle
+                      cx={area.x + area.width - 12}
+                      cy={area.y + 12}
+                      r="7"
+                      fill={getCongestionColor(area.congestion)}
+                      stroke="white"
+                      strokeWidth="2"
+                    />
+                  )}
+                </g>
+              ))}
+              
+              {/* Animated Route */}
+              {showRoute && startGate && endGate && (
+                <line 
+                  x1={startGate.x + 35} 
+                  y1={startGate.y + 30} 
+                  x2={endGate.x + 35} 
+                  y2={endGate.y + 30}
+                  stroke="#e74c3c"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray="20,10"
+                  strokeDashoffset={-animationProgress * 2}
+                  opacity="0.8"
+                />
+              )}
+            </svg>
+
+            {/* Zoom Controls Overlay */}
+            <div className="absolute bottom-4 right-4 flex flex-col gap-2 bg-white rounded-lg shadow-lg p-2">
+              <button
+                onClick={() => setZoom(prev => Math.min(3, prev + 0.2))}
+                className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                title="Zoom In"
+              >
+                <ZoomIn className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setZoom(prev => Math.max(0.5, prev - 0.2))}
+                className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                title="Zoom Out"
+              >
+                <ZoomOut className="w-5 h-5" />
+              </button>
+              <button
+                onClick={resetView}
+                className="p-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                title="Reset View"
+              >
+                <Accessibility className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Mobile Instructions */}
+            {isMobile && (
+              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-full text-sm shadow-lg">
+                Pinch to zoom • Drag to pan
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    try {
+      const root = document.getElementById('root');
+      if (root) {
+        ReactDOM.render(<TerminalMap />, root);
+      }
+    } catch (error) {
+      console.error('Error rendering:', error);
+    }
+  </script>
+</body>
+</html>
