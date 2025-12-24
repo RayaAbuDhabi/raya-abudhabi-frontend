@@ -1,5 +1,5 @@
 // app/api/chat/route.ts
-// API route with offline fallback ----
+// API route with offline fallback
 
 import { NextRequest, NextResponse } from 'next/server';
 import offlineEngine from '@/lib/services/offlineEngine';
@@ -173,5 +173,4 @@ export async function OPTIONS(request: NextRequest) {
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
-
 }

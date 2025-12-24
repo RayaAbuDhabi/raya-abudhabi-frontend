@@ -1,0 +1,105 @@
+📋 Data Checklist - What to Provide:
+1. Terminal Layout
+
+ Floor plan image/PDF (architectural drawing)
+ Terminal dimensions (length x width in meters)
+ Number of levels/floors
+ Scale reference (e.g., 1:500)
+
+2. Gates Information
+
+ Complete gate list (A1-A?, B1-B?, C1-C?, etc.)
+ Gate positions (X, Y coordinates OR distances from reference point)
+ Which concourse each gate belongs to
+ Gate types (contact gates, remote gates, bus gates)
+
+3. Facilities & POIs
+
+ Restaurants/cafes with locations
+ Retail shops
+ Lounges (airline-specific)
+ Prayer rooms
+ Restrooms
+ Information desks
+ Currency exchange
+ ATMs
+ Pharmacies
+
+4. Infrastructure
+
+ Check-in counter zones
+ Security checkpoint locations
+ Baggage claim carousel positions
+ Customs/immigration areas
+ Entry/exit points
+
+5. Accessibility
+
+ Elevator locations
+ Escalator positions
+ Accessible ramps
+ Accessible restrooms
+ Wheelchair assistance points
+
+6. Pathways
+
+ Main walking corridors
+ Moving walkways/travelators
+ Actual walking distances between key points
+ Restricted areas
+
+7. Real-Time Data (if available)
+
+ Gate congestion/wait times
+ Facility operating hours
+ Flight information integration
+ Queue lengths at security
+
+📝 Preferred Data Formats:
+Best formats:
+
+JSON/CSV files with coordinates
+SVG/CAD files
+Georeferenced images
+Excel spreadsheet with data
+
+Example JSON structure:
+json{
+  "gates": [
+    {
+      "id": "gate_a1",
+      "name": "A1",
+      "x": 1250.5,
+      "y": 345.2,
+      "concourse": "A",
+      "type": "contact",
+      "airlines": ["EY", "BA"]
+    }
+  ],
+  "facilities": [...],
+  "walkingPaths": [...]
+}
+🔄 What I'll Do Once You Provide Data:
+
+✅ Update all gate positions to exact coordinates
+✅ Scale the map to real dimensions
+✅ Add all actual facilities with correct locations
+✅ Calculate real walking distances
+✅ Add accurate pathfinding routes
+✅ Integrate any real-time data feeds
+✅ Create a production-ready version
+
+💾 Meanwhile, I'm Saving:
+I'll keep the current demo structure ready so when you return with real data, I can:
+
+Quickly swap out the mock data
+Maintain all the features (zoom, pan, routing, etc.)
+Keep the UI/UX intact
+
+📞 Ready When You Are!
+Just come back and say something like:
+
+"I have the Terminal 3 data - here's the floor plan and gate list"
+
+And I'll integrate it immediately! 🚀
+Good luck getting the official data! 🎯
