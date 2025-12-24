@@ -8,13 +8,14 @@
     "start": "next start",
     "lint": "eslint"
   },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.71.2",
-    "html5-qrcode": "^2.3.8",
-    "next": "16.0.8",
-    "react": "19.2.1",
-    "react-dom": "19.2.1"
-  },
+ "dependencies": {
+   "@anthropic-ai/sdk": "^0.71.2",
+   "html5-qrcode": "^2.3.8",
+   "lucide-react": "^0.263.1",     ← ADD THIS LINE
+   "next": "16.0.8",
+   "react": "19.2.1",
+   "react-dom": "19.2.1"
+ }},
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
@@ -26,3 +27,4 @@
     "typescript": "^5"
   }
 }
+
