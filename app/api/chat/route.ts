@@ -71,7 +71,7 @@ async function getOnlineResponse(query: string, conversationHistory: any[], apiK
 
 AIRPORT INFORMATION:
 - Location: ${airportInfo.city}, ${airportInfo.country}
-  Number of Terminals: ${terminals.lengt
+  Number of Terminals: ${terminals.length}
 - Timezone: ${airportInfo.timezone}
 
 TERMINALS:
