@@ -196,5 +196,5 @@ const navigationGraph: NavigationNode[] = [
   }
 ];
 
-export { NavigationNode };
+export type { NavigationNode };
 export default navigationGraph;
