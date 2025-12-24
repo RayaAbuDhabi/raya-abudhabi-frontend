@@ -16,7 +16,7 @@ interface QueryResult {
 }
 
 class OfflineIntelligenceEngine {
-  private kb = knowledgeBase;
+  public kb = knowledgeBase;
   // Reduced stopwords - keep important query words
   private stopwords = new Set([
     'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
